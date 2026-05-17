@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Молотки и блоки | Telegram Mini Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1e2a2f 0%, #0f1a1f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            padding: 16px;
+        }
+
+        /* Основной контейнер игры */
+        .game-container {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(30, 40, 45, 0.75);
+            backdrop-filter: blur(8px);
+            border-radius: 56px;
+            padding: 20px 18px 30px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.2s;
+        }
+
+        /* Верхняя панель: баланс и ставка */
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #00000055;
+            backdrop-filter: blur(4px);
+            border-radius: 48px;
+            padding: 12px 20px;
+            flex: 1;
+            text-align: center;
+            border: 1px solid rgba(255,215,150,0.3);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        .card span:first-child {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: #ffd966;
+            display: block;
+        }
+
+        .card .value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f5f3e8;
+            text-shadow: 0 2px 3px black;
+            line-height: 1.2;
+        }
+
+        .bet-control {
+            display: flex;
+            background: #2a3a3f;
+            border-radius: 60px;
+            overflow: hidden;
+            border: 1px solid #ffcd7e;
+            margin-top: 8px;
+        }
+
+        .bet-control button {
+            background: #3e555c;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 48px;
+            cursor: pointer;
+            transition: 0.1s linear;
+        }
+
+        .bet-control button:active { background: #ffa559; transform: scale(0.96);}
+        .bet-control input {
+            background: #1f2c30;
+            border: none;
+            color: #ffeaac;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-align: center;
+            width: 110px;
+            padding: 8px 0;
+            outline: none;
+        }
+
+        /* Рулетка */
+        .roulette-area {
+            background: #1e282c;
+            border-radius: 80px;
+            padding: 20px 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: inset 0 0 8px #00000055, 0 8px 18px black;
+        }
+
+        .hammer-result {
+            font-size: 3.8rem;
+            font-weight: bold;
+            background: #00000066;
+            border-radius: 100px;
+            display: inline-block;
+            padding: 8px 28px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(4px);
+            letter-spacing: 4px;
+        }
+
+        .hammer-desc {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #ffe0a3;
+            background: #00000055;
+            border-radius: 30px;
+            padding: 6px 16px;
+            display: inline-block;
+        }
+
+        .spin-btn {
+            background: radial-gradient(circle at 30% 10%,
+
+
+47, #ff7e05);
+            border: none;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 12px 30px;
+            border-radius: 60px;
+            color: white;
+            text-shadow: 0 2px 2px #a03d00;
+            cursor: pointer;
+            transition: 0.08s linear;
+            width: 80%;
+            margin-top: 12px;
+            box-shadow: 0 8px 0 #9b4b00;
+            transform: translateY(-2px);
+        }
+
+        .spin-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 3px 0 #9b4b00;
+        }
+
+        /* Блоки для ломания */
+        .blocks-title {
+            text-align: center;
+            margin: 20px 0 12px;
+            font-weight: bold;
+            color: #ffeecc;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+        .blocks-grid {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .block {
+            background: radial-gradient(ellipse at 30% 25%, #c7a55b, #8b5a2b);
+            width: 95px;
+            height: 105px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: #2c1b0c;
+            text-shadow: 0 1px 0 #ffdfaa;
+            box-shadow: 0 10px 0 #593e1a;
+            transition: 0.05s linear;
+            cursor: pointer;
+            border: 1px solid #ffd58c;
+        }
+        .block span {
+            font-size: 0.9rem;
+            background: #00000066;
+            padding: 2px 8px;
+            border-radius: 50px;
+            margin-top: 6px;
+            color: #ffefb9;
+        }
+        .block:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #593e1a;
+        }
+        .block.disabled, .block.broken {
+            filter: grayscale(0.6);
+            opacity: 0.5;
+            pointer-events: none;
+            transform: translateY(0);
+            box-shadow: 0 5px 0 #593e1a;
+        }
+        .info-message {
+            text-align: center;
+            font-size: 0.85rem;
+            background: #00000077;
+            border-radius: 50px;
+            padding: 8px;
+            margin-top: 15px;
+            color: #f8d99c;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            transform: translateY(0);
+            pointer-events: none;
+        }
+
+        max-width: 500px {
+            .block { width: 75px; height: 85px; font-size: 1.4rem;}
+            .hammer-result { font-size: 2.5rem; padding: 5px 20px;}
+            .stats-panel .value { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="stats-panel">
+        <div class="card">
+            <span>💰 БАЛАНС</span>
+            <div class="value" id="balanceValue">1000</div>
+        </div>
+        <div class="card">
+            <span>⚙️ СТАВКА</span>
+            <div class="bet-control">
+                <button id="betMinus">-</button>
+                <input type="number" id="betAmount" value="50" step="10" min="10">
+                <button id="betPlus">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="roulette-area">
+        <div class="hammer-result" id="hammerIcon">🔨 ?</div>
+        <div class="hammer-desc" id="hammerDesc">Нажми «КРУТИТЬ»</div>
+        <button class="spin-btn" id="spinBtn">🎲 КРУТИТЬ РУЛЕТКУ</button>
+    </div>
+
+    <div class="blocks-title">💥 РАЗБЕЙ БЛОК МОЛОТКОМ 💥</div>
+    <div class="blocks-grid" id="blocksContainer">
+        <!-- блоки будут добавлены через js -->
+    </div>
+    <div class="info-message" id="gameInfo">🔨 Выпадет молоток → ломай блок и получи ставку × множитель × силу молотка!</div>
+</div>
+
+<script>
+    // ---------- Игровые данные ----------
+    let balance = 1000;          // начальный баланс
+    let currentBet = 50;        // текущая ставка
+    let
+
+
+hammerPower = null;      // null - нет молотка, 1,2,3 - сила молотка
+    let gamePhase = "idle";      // idle, spinning, hammerReady, waitingReset
+
+    // Блоки: множитель, id, DOM элемент
+    const blocksData = [
+        { multiplier: 2,  name: "x2" },
+        { multiplier: 3,  name: "x3" },
+        { multiplier: 5,  name: "x5" },
+        { multiplier: 7,  name: "x7" }
+    ];
+
+    let blocksElements = [];
+    let blockUsed = false;       // был ли уже использован молоток в этом раунде
+
+    // Элементы DOM
+    const balanceSpan = document.getElementById("balanceValue");
+    const betInput = document.getElementById("betAmount");
+    const spinBtn = document.getElementById("spinBtn");
+    const hammerIconDiv = document.getElementById("hammerIcon");
+    const hammerDescSpan = document.getElementById("hammerDesc");
+    const blocksContainer = document.getElementById("blocksContainer");
+    const gameInfoSpan = document.getElementById("gameInfo");
+
+    // Обновить отображение баланса и ставки
+    function updateUI() {
+        balanceSpan.innerText = Math.floor(balance);
+        betInput.value = currentBet;
+        // заблокировать спин если баланс меньше ставки или идёт игра
+        if (balance < currentBet || gamePhase !== "idle") {
+            spinBtn.disabled = true;
+        } else {
+            spinBtn.disabled = false;
+        }
+    }
+
+    // Визуальное обновление блоков (активность)
+    function updateBlocksState() {
+        const canInteract = (gamePhase === "hammerReady" && !blockUsed);
+        blocksElements.forEach((blockDiv, idx) => {
+            if (canInteract) {
+                blockDiv.classList.remove("disabled", "broken");
+                blockDiv.style.pointerEvents = "auto";
+            } else {
+                blockDiv.classList.add("disabled");
+                blockDiv.style.pointerEvents = "none";
+            }
+            // если уже ломали этот блок (но у нас блок ломается один раз, все блоки деактив)
+            if (blockUsed) {
+                blockDiv.classList.add("broken");
+            }
+        });
+    }
+
+    // Создать блоки в DOM
+    function createBlocks() {
+        blocksContainer.innerHTML = "";
+        blocksElements = [];
+        blocksData.forEach((block, i) => {
+            const blockDiv = document.createElement("div");
+            blockDiv.className = "block";
+            blockDiv.setAttribute("data-idx", i);
+            blockDiv.setAttribute("data-mult", block.multiplier);
+            blockDiv.innerHTML = `🔨 ${block.multiplier}x
+<spa
+множитель</span>`;
+            blockDiv.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (gamePhase === "hammerReady" && !blockUsed && hammerPower !== null) {
+                    useHammerOnBlock(i, block.multiplier);
+                } else {
+                    if (hammerPower === null) gameInfoSpan.innerText = "⚠️ Сначала выиграй молоток в рулетке!";
+                    else if (blockUsed) gameInfoSpan.innerText = "⛏️ Ты уже разбил блок в этом раунде!";
+                    else gameInfoSpan.innerText = "⚡ Не активен, сначала покрути рулетку!";
+                    setTimeout(() => {
+                        if (gamePhase !== "hammerReady") gameInfoSpan.innerText = "🔨 Выпадет молоток → ломай блок и получи умножение!";
+                    }, 1500);
+                }
+            });
+            blocksContainer.appendChild(blockDiv);
+            blocksElements.push(blockDiv);
+        });
+        updateBlocksState();
+    }
+
+    // Использовать молоток на блоке
+    function useHammerOnBlock(blockIndex, multiplier) {
+        if (hammerPower === null) return;
+        const winAmount = currentBet * multiplier * hammerPower;
+        // Добавляем выигрыш к балансу
+        balance += winAmount;
+        blockUsed = true;
+        gamePhase = "waitingReset";  // блок использован, раунд окончен, нельзя повторно бить
+        updateUI();
+        updateBlocksState();
+
+        // Красивое сообщение
+        gameInfoSpan.innerHTML = `💥 Ты разбил блок x${multiplier} молотком силы ${hammerPower}! <span style="color:#ffd966;">+${winAmoun
+
+
+t} монет</span> 💥`;
+        hammerDescSpan.innerText = `Молоток использован! +${winAmount}`;
+        // Сбросить молоток
+        hammerPower = null;
+        // Показать что раунд закончен, кнопка спин разблокируется после сброса (через 1.5 сек или сразу)
+        setTimeout(() => {
+            resetRoundAfterBreak();
+        }, 1500);
+    }
+
+    // Сброс после того как блок разбит (переход в idle)
+    function resetRoundAfterBreak() {
+        if (gamePhase === "waitingReset") {
+            gamePhase = "idle";
+            blockUsed = false;
+            hammerPower = null;
+            // обновить иконку рулетки
+            hammerIconDiv.innerHTML = "🔨 ?";
+            hammerDescSpan.innerText = "Готов к новой ставке!";
+            updateBlocksState();
+            updateUI();
+            gameInfoSpan.innerHTML = "🎲 Крути рулетку снова, чтобы получить новый молоток!";
+        }
+    }
+
+    // Анимация рулетки (случайные проходы)
+    function spinRoulette() {
+        if (gamePhase !== "idle") {
+            gameInfoSpan.innerText = "Сначала заверши текущий раунд!";
+            return false;
+        }
+        if (balance < currentBet) {
+            gameInfoSpan.innerText = "❌ Недостаточно баланса! Уменьши ставку.";
+            return false;
+        }
+
+        // Списываем ставку
+        balance -= currentBet;
+        updateUI();
+        gamePhase = "spinning";
+        spinBtn.disabled = true;
+
+        gameInfoSpan.innerText = "🎡 Рулетка крутится...";
+        hammerIconDiv.innerHTML = "🌀🌀🌀";
+        hammerDescSpan.innerText = "Выпадает молот...";
+
+        // Возможные результаты: сила молотка 1,2,3 или "ничего" (null)
+        const outcomes = [1, 2, 3, null];  // null = ничего
+        // Делаем "анимацию прокрутки"
+        let spins = 0;
+        const maxSpins = 12;
+        const interval = setInterval(() => {
+            const randomPreview = outcomes[Math.floor(Math.random() * outcomes.length)];
+            if (randomPreview === null) {
+                hammerIconDiv.innerHTML = "💨 ?";
+                hammerDescSpan.innerText = "Мимо...";
+            } else {
+                const powerMap = {1:"🔨 слабый",2:"🔨🔨 средний",3:"🔨🔨🔨 сильный"};
+                hammerIconDiv.innerHTML = powerMap[randomPreview] + " " + "⚡".repeat(randomPreview);
+                hammerDescSpan.innerText = `Сила ${randomPreview}x`;
+            }
+            spins++;
+            if (spins >= maxSpins) {
+                clearInterval(interval);
+                // Финальный результат
+                const finalResult = outcomes[Math.floor(Math.random() * outcomes.length)];
+                finishSpin(finalResult);
+            }
+        }, 70);
+        return true;
+    }
+
+    function finishSpin(result) {
+        hammerPower = result;   // null или число 1-3
+        if (result === null) {
+            // Нет молотка - ставка проиграна, раунд закончен
+            hammerIconDiv.innerHTML = "💨 ПУСТО";
+            hammerDescSpan.innerHTML = "Не повезло, молотка нет! Ставка потеряна.";
+            gameInfoSpan.innerHTML = "😞 Ничего не выпало. Ты потерял ставку. Крути снова!";
+            gamePhase = "idle";
+            blockUsed = false;
+            hammerPower = null;
+            updateBlocksState();
+            updateUI();
+            // сбросить блоки
+            blocksElements.forEach(bl => bl.classList.remove("broken"));
+        } 
+        else {
+            // Молоток выпал!
+            let powerText = "";
+            if (result === 1) powerText = "🔨 Слабый молоток (x1)";
+            else if (result === 2) powerText = "🔨🔨 Средний молоток (x2)";
+            else powerText = "🔨🔨🔨 Сильный молоток (x3)";
+            hammerIconDiv.innerHTML = powerText + " 💥";
+            hammerDescSpan.innerHTML = `Мощность ${result}x! Теперь разбей любой блок!`;
+            gameInfoSpan.innerHTML = `🎉 Выпал молоток силы ${result}! Нажми на блок, чтобы умножить ставку!`;
+            gamePhase = "hammerReady";
+            blockUsed = false;
+            updateBlocksState();
+        }
+        spinBtn.disabled = false;
+        if (result !== null) {
+            // Если выпал молоток - иг
+
+
+рок сам выберет блок
+        } else {
+            // Если ничего, просто сбросим состояние блоков
+            updateBlocksState();
+        }
+        // Дополнительно перепроверим кнопку
+        updateUI();
+    }
+
+    // Изменение ставки
+    function changeBet(delta) {
+        if (gamePhase !== "idle") {
+            gameInfoSpan.innerText = "Изменить ставку можно только между раундами!";
+            return;
+        }
+        let newVal = currentBet + delta;
+        if (newVal < 10) newVal = 10;
+        if (newVal > balance && balance > 0) newVal = balance;
+        if (newVal <= 0) newVal = 10;
+        currentBet = newVal;
+        betInput.value = currentBet;
+        updateUI();
+    }
+
+    // Ручной ввод ставки
+    function handleBetInput() {
+        let raw = parseInt(betInput.value);
+        if (isNaN(raw)) raw = 10;
+        if (raw < 10) raw = 10;
+        if (raw > balance && balance > 0) raw = balance;
+        if (raw <= 0) raw = 10;
+        currentBet = raw;
+        betInput.value = currentBet;
+        updateUI();
+    }
+
+    // Инициализация игры и событий
+    function initGame() {
+        createBlocks();
+        updateUI();
+        // События
+        spinBtn.addEventListener("click", () => spinRoulette());
+        document.getElementById("betMinus").addEventListener("click", () => changeBet(-10));
+        document.getElementById("betPlus").addEventListener("click", () => changeBet(10));
+        betInput.addEventListener("change", handleBetInput);
+        betInput.addEventListener("input", function() {
+            let val = parseInt(this.value);
+            if (!isNaN(val) && val > 0) {
+                if (val > balance) this.value = balance;
+            }
+        });
+        gameInfoSpan.innerText = "🔨 Крути рулетку, получай молоток и круши блоки!";
+    }
+
+    initGame();
+</script>
+</body>
+</html>#ffb3
+
+
+
+
